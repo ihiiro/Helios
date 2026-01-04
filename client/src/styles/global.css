@@ -8,3 +8,7 @@ body {
 div.AO::-webkit-scrollbar {
   display: none;
 }
+
+.delete {
+  display: none;
+}
