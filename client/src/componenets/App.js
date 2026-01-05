@@ -1,17 +1,28 @@
 import '../styles/global.css'
 import '../styles/App.css'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import down_arrow from '../assets/down_arrow.png'
 
 function App() {
   const [ slot_active, set_slot_active ] = useState({})
-  const [ slots, set_slots ] = useState({
-    '0': { watch_context: 'watch-context', backup_context: 'backup-context', deleted: false },
-    '1': { watch_context: 'watch-context', backup_context: 'backup-context', deleted: false },
-  })
+  const [ slots, set_slots ] = useState({})
   const [ crosshair, set_crosshair ] = useState(-1)
   // for new slots, the correct latest ids should be calculated
-  const [ new_slot_id, set_new_slot_id ] = useState(Object.keys(slots).length)
+  const [ new_slot_id, set_new_slot_id ] = useState(0)
+
+  useEffect(() => {
+    fetch('/api/slots').then(response => {
+      if (response.ok) {
+        response.json().then(slots => {
+          set_slots(slots)
+          set_new_slot_id(Object.keys(slots).length)
+        })
+      }
+        
+      else
+        alert('Error fetching slots')
+    })
+  }, [])
 
   function toggle_slot(slot) { 
     set_slot_active({
