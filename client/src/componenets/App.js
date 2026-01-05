@@ -7,14 +7,13 @@ function App() {
   const [ slot_active, set_slot_active ] = useState({})
   const [ slots, set_slots ] = useState({})
   const [ crosshair, set_crosshair ] = useState(-1)
-  const [ new_slot_id, set_new_slot_id ] = useState(0)
+  const [ can_save, set_can_save ] = useState(true)
 
   useEffect(() => {
     fetch('/get-slots').then(response => {
       if (response.ok) {
         response.json().then(slots => {
           set_slots(slots)
-          set_new_slot_id(Object.keys(slots).length)
         })
       }
         
@@ -56,23 +55,24 @@ function App() {
   }
 
   function add_slot() {
+    let ID = Math.random().toString().substr(2, 12)
     set_slots({
       ...slots,
-      [new_slot_id]: { watch_context: 'new_slot', 
+      [ID]: { watch_context: 'new_slot', 
                       backup_context: 'new_slot', 
                       deleted: false }
     })
-    set_new_slot_id(Object.keys(slots).length + 1)
   }
 
   function save_all() {
+    set_can_save(false)
     fetch('/post-slots',
       {
         method: 'POST',
         body: JSON.stringify(slots),
         headers: { 'content-type': 'application/json' }
       }
-    )
+    ).then(() => set_can_save(true))
   }
 
   return (
@@ -82,7 +82,7 @@ function App() {
 
       { Object.keys(slots).map( key => (
         !slots[key].deleted && <div className={`slot ${slot_active[key] ? 'slot-active' : ''}`} onClick={ () => toggle_slot(key) }>
-          <label style={{color: '#009900'}}>Slot {key}</label>
+          <label style={{color: '#009900'}}>Slot</label>
           <label>Watch this location for changes</label>
           <input value={slots[key].watch_context} onChange={e => modify_watch_context(e.target, key)} ></input> {/* directory to watch */}
           <img src={down_arrow} alt='down_arrow'></img>
@@ -94,7 +94,7 @@ function App() {
     </div>
 
     <div className='buttons'>
-      <button style={{backgroundColor: '#66b032'}} onClick={save_all}>Save all</button>
+      <button style={{backgroundColor: ( can_save ) ? '#66b032' : '#ccc'}} disabled={!can_save} onClick={save_all}>Save all</button>
       <button style={{backgroundColor: '#00bfff'}} onClick={add_slot} >Add slot</button>
       <button style={{backgroundColor: '#cc0000'}} onClick={remove_slot}>Remove slot</button>
     </div>

@@ -12,7 +12,7 @@ app.get('/get-slots', (req, res) => {
     console.log('received request')
     fs.readFile('./slots.json', (err, data) => {
         if (err)
-            res.sendStatus(500)
+            res.status(500).send('INTERNAL SERVER ERROR')
         else
             res.send(data)
     })
@@ -20,7 +20,6 @@ app.get('/get-slots', (req, res) => {
 
 app.post('/post-slots', (req, res) => {
     let slots = req.body
-    let slots2 = slots
     let x = 0
     // remove the slots whose deleted property is true
     for ( slot in slots ) {
@@ -28,13 +27,11 @@ app.post('/post-slots', (req, res) => {
             delete slots[slot]
     }
 
-    // console.log(`slots: ${slots2['0']}`)
-
     fs.writeFile('./slots.json', JSON.stringify(slots), err => {
         if (err)
-            res.status(500)
+            res.status(500).send('INTERNAL SERVER ERROR')
         else
-            res.status(201)
+            res.status(201).send('SUCCESS')
     })
 })
 
