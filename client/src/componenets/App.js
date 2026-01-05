@@ -13,7 +13,6 @@ function App() {
   // for new slots, the correct latest ids should be calculated
   const [ new_slot_id, set_new_slot_id ] = useState(Object.keys(slots).length)
 
-
   function toggle_slot(slot) { 
     set_slot_active({
       [slot]: !slot_active[slot]
@@ -36,14 +35,17 @@ function App() {
   }
 
   function remove_slot() {
-    set_slots({
-      ...slots,
-      [crosshair]: { ...slots[crosshair], deleted: true }
-    })
+    if ( crosshair > -1 ) {
+      set_slots({
+            ...slots,
+            [crosshair]: { ...slots[crosshair], deleted: true }
+          })
+      set_crosshair(-1)
+    }
+    
   }
 
   function add_slot() {
-    console.log(new_slot_id)
     set_slots({
       ...slots,
       [new_slot_id]: { watch_context: 'new_slot', 
