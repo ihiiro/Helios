@@ -3,3 +3,5 @@ build/
 node_modules/
 .vscode/
 Screenshot 2026-01-01 at 17-31-31 tldraw • very good free whiteboard.png
+*.o
+*.exe

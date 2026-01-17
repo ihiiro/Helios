@@ -20,7 +20,6 @@ app.get('/get-slots', (req, res) => {
 
 app.post('/post-slots', (req, res) => {
     let slots = req.body
-    let x = 0
     // remove the slots whose deleted property is true
     for ( slot in slots ) {
         if ( slots[slot].deleted )
