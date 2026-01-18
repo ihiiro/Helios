@@ -1,7 +1,9 @@
 
 #include <iostream>
 #include <windows.h>
+#include <filesystem>
 using namespace std;
+
 
 #define DEV_PATH_NUMBER 7
 
@@ -11,7 +13,7 @@ using namespace std;
 
 int main() 
 {
-    const char *path[DEV_PATH_NUMBER] = {"", "", "", "/c/Users/Administrator/Desktop/Helios/watcher/test1", "", "/fdfdfd/", "/fdf"};
+    const char *path[DEV_PATH_NUMBER] = {"", "", "", "\\Users\\Administrator\\Desktop\\cv\\", "", "/fdfdfd/", "/fdf"};
     wchar_t wideCharPath[MAX_PATH];
     size_t mbstowcsReturn;
     HANDLE handles[DEV_PATH_NUMBER];
@@ -21,6 +23,11 @@ int main()
     for ( int i = 0, j = 0; i < DEV_PATH_NUMBER; i++ ) 
     {
         cout << "handle at index " << j << " [\"" << path[i] << "\"]";
+        if ( !filesystem::exists(path[i]) )
+        {
+            cerr << "\npath " << path[i] << " does not exist, ignored\n";
+            continue;
+        }
         /* FindFirstChangeNotification() requires a wchar_t for some reason so this function fills wideCharPath from path[i] */
         if ( mbstowcs_s(&mbstowcsReturn, wideCharPath, MAX_PATH, path[i], MAX_PATH) != 0 )
         {
@@ -28,7 +35,7 @@ int main()
             return PROGRAM_FAILED;
         }
         /* store the non-ignored change handles inside the array */
-        handles[j] = FindFirstChangeNotification((const char *)wideCharPath, TRUE, FILE_NOTIFY_CHANGE_SIZE);
+        handles[j] = FindFirstChangeNotification((const char *)wideCharPath, TRUE, FILE_NOTIFY_CHANGE_SIZE );
         if ( handles[j] == INVALID_HANDLE_VALUE )
         {
             cerr << "\ninvalid handle, ignored.\n";
