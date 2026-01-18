@@ -1,7 +1,7 @@
 
 TARGET = watcher.exe
 
-SRCS = watcher.cpp
+SRCS = watcher.cpp main.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 
