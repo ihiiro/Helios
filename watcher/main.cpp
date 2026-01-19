@@ -5,8 +5,6 @@ using namespace std;
 int main() 
 {
     const char *path[DEV_PATH_NUMBER] = {"", "", "", "\\Users\\Administrator\\Desktop\\cv\\", "", "/fdfdfd/", "/fdf"};
-    wchar_t wideCharPath[MAX_PATH];
-    size_t mbstowcsReturn;
     WATCH_CONTEXT context[DEV_PATH_NUMBER];
     int realNumberOfcontext = 0;
 
@@ -14,17 +12,6 @@ int main()
     for ( int i = 0, j = 0; i < DEV_PATH_NUMBER; i++ ) 
     {
         cout << "path " << " [\"" << path[i] << "\"]";
-        if ( !filesystem::exists(path[i]) )
-        {
-            cerr << " does not exist, ignored\n";
-            continue;
-        }
-        /* FindFirstChangeNotification() requires a wchar_t for some reason so this function fills wideCharPath from path[i] */
-        if ( mbstowcs_s(&mbstowcsReturn, wideCharPath, MAX_PATH, path[i], MAX_PATH) != 0 )
-        {
-            cerr << "\nmbstowcs_s() failed\n";
-            return PROGRAM_FAILED;
-        }
         context[j].handle = CreateFile(
             path[i],
             FILE_LIST_DIRECTORY,
@@ -42,9 +29,6 @@ int main()
         /* this object is used to supply the event handle to ReadDirectoryChangesW() 
         which we'll later wait on for signals */
         context[j].overlapped.hEvent = CreateEvent(NULL, FALSE, 0, NULL);
-        /* the change buffer is where change information is stored
-        (we do that ourselves via another windows function ) */
-        // uint8_t changeBuf[CHANGE_BUFFER_SIZE];
         BOOL success = ReadDirectoryChangesW(
             context[j].handle, context[j].changeBuf, CHANGE_BUFFER_SIZE, TRUE,
             FILE_NOTIFY_CHANGE_FILE_NAME  | 
