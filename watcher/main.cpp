@@ -6,12 +6,13 @@ int main()
 {
     const char *path[DEV_PATH_NUMBER] = {"", "", "", "\\Users\\Administrator\\Desktop\\cv\\", "", "/fdfdfd/", "/fdf"};
     WATCH_CONTEXT context[DEV_PATH_NUMBER];
-    int realNumberOfcontext = 0;
+    int realNumberOfcontexts = 0;
 
     cout << "initializing monitoring tools...\n";
     for ( int i = 0, j = 0; i < DEV_PATH_NUMBER; i++ ) 
     {
         cout << "path " << " [\"" << path[i] << "\"]";
+        context[j].path = path[i];
         context[j].handle = CreateFile(
             path[i],
             FILE_LIST_DIRECTORY,
@@ -36,41 +37,82 @@ int main()
             FILE_NOTIFY_CHANGE_LAST_WRITE,
             NULL, &context[j].overlapped, NULL
         );
+        if ( !success )
+        {
+            cerr << "ReadDirectoryChangesW() failed\n";
+            return PROGRAM_FAILED;
+        }
         cout << " assimilated.\n";
         j++;
-        realNumberOfcontext++;
+        realNumberOfcontexts++;
 
     }
 
+    while ( true )
+        for ( int i = 0; i < realNumberOfcontexts; i++ )
+        {
+            DWORD status = WaitForSingleObject(context[i].overlapped.hEvent, 500);
 
-    // while ( true )
-    //     for ( int i = 0; i < realNumberOfcontext; i++ )
-    //     {
-    //         DWORD status = WaitForSingleObject(context[i], 0);
+            if ( status == WAIT_OBJECT_0 )
+            {
+                cout << "changes detected for [\"" << context[i].path << "\"]" "\n";
+                DWORD bytesTransferred;
+                GetOverlappedResult(context[i].handle, 
+                                    &context[i].overlapped,
+                                    &bytesTransferred,
+                                    FALSE); // possible TRUE to wait for pending operation
+                FILE_NOTIFY_INFORMATION *event = (FILE_NOTIFY_INFORMATION*)context[i].changeBuf;
+                while (true) 
+                {
+                    DWORD nameLen = event->FileNameLength / sizeof(wchar_t);
 
-    //         if ( status == WAIT_OBJECT_0 )
-    //         {
-    //             cout << "write detected for handle at index " << i << "\n";
-    //             if ( FindNextChangeNotification(context[i]) == 0 )
-    //             {
-    //                 cerr << "batch FindNextChangeNotification() failed for handle at index " << i << "\n";
-    //                 continue;
-    //             }
-    //             /* to avoid writing multiple incomplete backups, we "batch" signals instead */
-    //             status = WaitForSingleObject(context[i], GAME_SAVING_WAIT_TIME);
-    //             // write backups code here
-    //             if ( FindNextChangeNotification(context[i]) == 0 )
-    //             {
-    //                 cerr << "bridge findNextChangeNotification() failed for handle at index " << i << "\n";
-    //                 continue;
-    //             }
-    //             if ( status == WAIT_OBJECT_0 )
-    //                 cout << "delayed writes detected for handle at index " << i << "\n";
-    //             else if ( status == WAIT_FAILED )
-    //                 cerr << "nested WAIT_FAILED for handle at index " << i << "\n";
-    //         }
-    //         else if ( status == WAIT_FAILED )
-    //             cerr << "WAIT_FAILED for handle at index " << i << "\n";
-    //     }
+                    switch (event->Action)
+                    {
+                        case FILE_ACTION_ADDED:
+                            wprintf(L"file added: %.*s\n", nameLen, event->FileName);
+                            break;
+
+                        case FILE_ACTION_REMOVED:
+                            wprintf(L"file removed: %.*s\n", nameLen, event->FileName);
+                            break;
+
+                        case FILE_ACTION_MODIFIED:
+                            wprintf(L"file modified: %.*s\n", nameLen, event->FileName);
+                            break;
+
+                        case FILE_ACTION_RENAMED_OLD_NAME:
+                            wprintf(L"file renamed from: %.*s\n", nameLen, event->FileName);
+                            break;
+
+                        case FILE_ACTION_RENAMED_NEW_NAME:
+                            wprintf(L" to %.*s\n", nameLen, event->FileName);
+                            break;
+
+                        default:
+                            cout << "unknown action\n";
+                    }
+
+                    if ( event->NextEntryOffset )
+                        *((uint8_t**)&event) += event->NextEntryOffset;
+                    else
+                        break;
+                }
+                // cout << "waiting for save to finish " << GAME_SAVING_WAIT_TIME << " seconds...\n";
+                // sleep(GAME_SAVING_WAIT_TIME);
+                // cout << "backing up...\n";
+                //backup code here
+            }
+            else if ( status == WAIT_FAILED )
+                cerr << "WAIT_FAILED for [\"" << context[i].path << "\"]" "\n";
+
+            /* queue next change operation */
+            BOOL success = ReadDirectoryChangesW(
+                context[i].handle, context[i].changeBuf, CHANGE_BUFFER_SIZE, TRUE,
+                FILE_NOTIFY_CHANGE_FILE_NAME  |
+                FILE_NOTIFY_CHANGE_DIR_NAME   |
+                FILE_NOTIFY_CHANGE_LAST_WRITE,
+                NULL, &context[i].overlapped, NULL
+            );
+        }
     
 }
