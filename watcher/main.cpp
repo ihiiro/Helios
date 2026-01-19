@@ -1,18 +1,27 @@
 
+/*
+
+The windows API documentation is terrible.
+I learned how to use ReadDirectoryChangeW() from this guy: https://gist.github.com/nickav/a57009d4fcc3b527ed0f5c9cf30618f8
+
+
+*/
+
+
 #include "watcher.hpp"
 using namespace std;
 
 int main() 
 {
     const char *path[DEV_PATH_NUMBER] = {"", "", "\\Users\\Administrator\\Desktop\\dd", "\\Users\\Administrator\\Desktop\\cv\\", "", "/fdfdfd/", "/fdf"};
-    WATCH_CONTEXT context[DEV_PATH_NUMBER];
+    __CONTEXT context[DEV_PATH_NUMBER];
     int realNumberOfcontexts = 0;
 
     cout << "initializing monitoring tools...\n";
     for ( int i = 0, j = 0; i < DEV_PATH_NUMBER; i++ ) 
     {
         cout << "path " << " [\"" << path[i] << "\"]";
-        context[j].path = path[i];
+        context[j].watch_context = path[i];
         context[j].handle = CreateFile(
             path[i],
             FILE_LIST_DIRECTORY,
@@ -51,17 +60,25 @@ int main()
     while ( true )
         for ( int i = 0; i < realNumberOfcontexts; i++ )
         {
-            DWORD status = WaitForSingleObject(context[i].overlapped.hEvent, 500);
+            DWORD status = WaitForSingleObject(context[i].overlapped.hEvent, OBJECT_WAIT_TIME_MS);
 
             if ( status == WAIT_OBJECT_0 )
             {
-                cout << "changes detected for [\"" << context[i].path << "\"]" "\n";
+                cout << "changes detected for [\"" << context[i].watch_context << "\"]" "\n";
                 DWORD bytesTransferred;
                 GetOverlappedResult(context[i].handle, 
                                     &context[i].overlapped,
                                     &bytesTransferred,
                                     FALSE); // possible TRUE to wait for pending operation
                 FILE_NOTIFY_INFORMATION *event = (FILE_NOTIFY_INFORMATION*)context[i].changeBuf;
+                /* queue next changes */
+                BOOL success = ReadDirectoryChangesW(
+                    context[i].handle, context[i].changeBuf, CHANGE_BUFFER_SIZE, TRUE,
+                    FILE_NOTIFY_CHANGE_FILE_NAME  |
+                    FILE_NOTIFY_CHANGE_DIR_NAME   |
+                    FILE_NOTIFY_CHANGE_LAST_WRITE,
+                    NULL, &context[i].overlapped, NULL
+                );
                 while (true) 
                 {
                     DWORD nameLen = event->FileNameLength / sizeof(wchar_t);
@@ -97,22 +114,13 @@ int main()
                     else
                         break;
                 }
-                // cout << "waiting for save to finish " << GAME_SAVING_WAIT_TIME << " seconds...\n";
-                // sleep(GAME_SAVING_WAIT_TIME);
-                // cout << "backing up...\n";
+                cout << "backing up...\n";
                 //backup code here
             }
             else if ( status == WAIT_FAILED )
-                cerr << "WAIT_FAILED for [\"" << context[i].path << "\"]" "\n";
+                cerr << "WAIT_FAILED for [\"" << context[i].watch_context << "\"]" "\n";
 
-            /* queue next change operation */
-            BOOL success = ReadDirectoryChangesW(
-                context[i].handle, context[i].changeBuf, CHANGE_BUFFER_SIZE, TRUE,
-                FILE_NOTIFY_CHANGE_FILE_NAME  |
-                FILE_NOTIFY_CHANGE_DIR_NAME   |
-                FILE_NOTIFY_CHANGE_LAST_WRITE,
-                NULL, &context[i].overlapped, NULL
-            );
+            
         }
     
 }

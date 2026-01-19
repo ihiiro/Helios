@@ -17,4 +17,6 @@ clear:
 	rm -rf $(OBJS)
 
 aclear: clear
-	rm -rf watcher.exe
+	rm -rf $(TARGET)
+
+re: aclear all
