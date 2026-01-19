@@ -4,7 +4,7 @@ using namespace std;
 
 int main() 
 {
-    const char *path[DEV_PATH_NUMBER] = {"", "", "", "\\Users\\Administrator\\Desktop\\cv\\", "", "/fdfdfd/", "/fdf"};
+    const char *path[DEV_PATH_NUMBER] = {"", "", "\\Users\\Administrator\\Desktop\\dd", "\\Users\\Administrator\\Desktop\\cv\\", "", "/fdfdfd/", "/fdf"};
     WATCH_CONTEXT context[DEV_PATH_NUMBER];
     int realNumberOfcontexts = 0;
 
@@ -69,23 +69,23 @@ int main()
                     switch (event->Action)
                     {
                         case FILE_ACTION_ADDED:
-                            wprintf(L"file added: %.*s\n", nameLen, event->FileName);
+                            wprintf(L"file added: %.*ls\n", nameLen, event->FileName);
                             break;
 
                         case FILE_ACTION_REMOVED:
-                            wprintf(L"file removed: %.*s\n", nameLen, event->FileName);
+                            wprintf(L"file removed: %.*ls\n", nameLen, event->FileName);
                             break;
 
                         case FILE_ACTION_MODIFIED:
-                            wprintf(L"file modified: %.*s\n", nameLen, event->FileName);
+                            wprintf(L"file modified: %.*ls\n", nameLen, event->FileName);
                             break;
 
                         case FILE_ACTION_RENAMED_OLD_NAME:
-                            wprintf(L"file renamed from: %.*s\n", nameLen, event->FileName);
+                            wprintf(L"file renamed from: %.*ls\n", nameLen, event->FileName);
                             break;
 
                         case FILE_ACTION_RENAMED_NEW_NAME:
-                            wprintf(L" to %.*s\n", nameLen, event->FileName);
+                            wprintf(L" to %.*ls\n", nameLen, event->FileName);
                             break;
 
                         default:
