@@ -1,5 +1,5 @@
 
-TARGET = watcher.exe
+TARGET = watcher
 
 SRCS = watcher.cpp main.cpp
 
@@ -8,10 +8,10 @@ OBJS = $(SRCS:.cpp=.o)
 all: $(TARGET)
 
 %.o: %.cpp
-	c++ -c $^
+	c++  -c $^
 
 $(TARGET): $(OBJS)
-	c++ $(OBJS) -o $@
+	c++ -static-libstdc++ $(OBJS)  -o $@
 
 clear:
 	rm -rf $(OBJS)

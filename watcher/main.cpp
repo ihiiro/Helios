@@ -35,7 +35,9 @@ int main()
             return PROGRAM_FAILED;
         }
         /* store the non-ignored change handles inside the array */
-        handles[j] = FindFirstChangeNotification((const char *)wideCharPath, TRUE, FILE_NOTIFY_CHANGE_SIZE );
+        handles[j] = FindFirstChangeNotification((const char *)wideCharPath, TRUE, FILE_NOTIFY_CHANGE_SIZE | 
+                                                    FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE |
+                                                 FILE_NOTIFY_CHANGE_FILE_NAME );
         if ( handles[j] == INVALID_HANDLE_VALUE )
         {
             cerr << "\ninvalid handle, ignored.\n";

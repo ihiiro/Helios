@@ -1,0 +1,2 @@
+the binary requires a MingW port of libunwind.dll which can be installed from https://packages.msys2.org/packages/mingw-w64-x86_64-libunwind and placed
+in system32
