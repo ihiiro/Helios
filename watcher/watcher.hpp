@@ -17,5 +17,4 @@ typedef struct {
     uint8_t changeBuf[CHANGE_BUFFER_SIZE];
     const char *watchContext;
     std::string backupContext;
-    unsigned int snapshotIndex;
 } __CONTEXT;

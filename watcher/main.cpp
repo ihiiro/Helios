@@ -33,7 +33,6 @@ int main()
 
         const char *path = itr->value["watch_context"].GetString();
         cout << "path " << " [\"" << path << "\"]";
-        context[i].snapshotIndex = 0;
         context[i].backupContext = itr->value["backup_context"].GetString();
         context[i].watchContext = path;
         context[i].handle = CreateFile(
@@ -133,7 +132,6 @@ int main()
                 filesystem::copy(context[i].watchContext, context[i].backupContext + 
                                             "/snapshot" + to_string(rand()) );
                 cout << " done.\n";
-                context[i].snapshotIndex++;
             }
             else if ( status == WAIT_FAILED )
                 cerr << "WAIT_FAILED for [\"" << context[i].watchContext << "\"]" "\n";
