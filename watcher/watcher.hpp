@@ -4,8 +4,8 @@
 #include <filesystem>
 #include <fstream>
 #include <vector>
-
 #include "./rapidjson/include/rapidjson/document.h"
+using namespace std;
 
 #define OBJECT_WAIT_TIME_MS 50
 #define PROGRAM_FAILED 1
@@ -18,3 +18,6 @@ typedef struct {
     const char *watchContext;
     std::string backupContext;
 } __CONTEXT;
+
+int initializeContexts(rapidjson::Document &doc, vector<__CONTEXT> &contexts);
+void startWatcherLoop(vector<__CONTEXT> contexts, int realNumberOfContexts);
