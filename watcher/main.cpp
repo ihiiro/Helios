@@ -7,23 +7,37 @@ I learned how to use ReadDirectoryChangeW() from this guy: https://gist.github.c
 
 */
 
-
 #include "watcher.hpp"
 using namespace std;
 
 int main() 
 {
-    const char *path[DEV_PATH_NUMBER] = {"", "", "\\Users\\Administrator\\Desktop\\dd", "\\Users\\Administrator\\Desktop\\cv\\", "", "/fdfdfd/", "/fdf"};
-    __CONTEXT context[DEV_PATH_NUMBER];
+    srand(time(0));
+    rapidjson::Document doc;
+    ifstream slotsFile("../server/slots.json");
+    string slotsString((istreambuf_iterator<char>(slotsFile)), 
+                        istreambuf_iterator<char>() );
+    doc.Parse(slotsString.c_str());
+    if ( doc.HasParseError() )
+        return cerr << "rapidjson parse error\n", PROGRAM_FAILED;
+    vector<__CONTEXT> context(doc.MemberEnd() - doc.MemberBegin());
+
+
     int realNumberOfcontexts = 0;
+    int i = 0;
 
     cout << "initializing monitoring tools...\n";
-    for ( int i = 0, j = 0; i < DEV_PATH_NUMBER; i++ ) 
+    for ( rapidjson::Value::ConstMemberIterator itr = doc.MemberBegin();
+        itr != doc.MemberEnd(); ++itr )
     {
-        cout << "path " << " [\"" << path[i] << "\"]";
-        context[j].watch_context = path[i];
-        context[j].handle = CreateFile(
-            path[i],
+
+        const char *path = itr->value["watch_context"].GetString();
+        cout << "path " << " [\"" << path << "\"]";
+        context[i].snapshotIndex = 0;
+        context[i].backupContext = itr->value["backup_context"].GetString();
+        context[i].watchContext = path;
+        context[i].handle = CreateFile(
+            path,
             FILE_LIST_DIRECTORY,
             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
             NULL,
@@ -31,20 +45,20 @@ int main()
             FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,
             NULL
         );
-        if ( context[j].handle == INVALID_HANDLE_VALUE )
+        if ( context[i].handle == INVALID_HANDLE_VALUE )
         {
             cerr << "\ninvalid handle, ignored.\n";
             continue;
         }
         /* this object is used to supply the event handle to ReadDirectoryChangesW() 
         which we'll later wait on for signals */
-        context[j].overlapped.hEvent = CreateEvent(NULL, FALSE, 0, NULL);
+        context[i].overlapped.hEvent = CreateEvent(NULL, FALSE, 0, NULL);
         BOOL success = ReadDirectoryChangesW(
-            context[j].handle, context[j].changeBuf, CHANGE_BUFFER_SIZE, TRUE,
+            context[i].handle, context[i].changeBuf, CHANGE_BUFFER_SIZE, TRUE,
             FILE_NOTIFY_CHANGE_FILE_NAME  | 
             FILE_NOTIFY_CHANGE_DIR_NAME   |
             FILE_NOTIFY_CHANGE_LAST_WRITE,
-            NULL, &context[j].overlapped, NULL
+            NULL, &context[i].overlapped, NULL
         );
         if ( !success )
         {
@@ -52,8 +66,9 @@ int main()
             return PROGRAM_FAILED;
         }
         cout << " assimilated.\n";
-        j++;
+        i++;
         realNumberOfcontexts++;
+
 
     }
 
@@ -64,7 +79,7 @@ int main()
 
             if ( status == WAIT_OBJECT_0 )
             {
-                cout << "changes detected for [\"" << context[i].watch_context << "\"]" "\n";
+                cout << "changes detected for [\"" << context[i].watchContext << "\"]" "\n";
                 DWORD bytesTransferred;
                 GetOverlappedResult(context[i].handle, 
                                     &context[i].overlapped,
@@ -114,11 +129,14 @@ int main()
                     else
                         break;
                 }
-                cout << "backing up...\n";
-                //backup code here
+                cout << "backing up...";
+                filesystem::copy(context[i].watchContext, context[i].backupContext + 
+                                            "/snapshot" + to_string(rand()) );
+                cout << " done.\n";
+                context[i].snapshotIndex++;
             }
             else if ( status == WAIT_FAILED )
-                cerr << "WAIT_FAILED for [\"" << context[i].watch_context << "\"]" "\n";
+                cerr << "WAIT_FAILED for [\"" << context[i].watchContext << "\"]" "\n";
 
             
         }
