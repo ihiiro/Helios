@@ -1,0 +1,85 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"encoding/json"
+	"io"
+	"bufio"
+	"os"
+	"net/http"
+)
+
+type _context struct {
+	WatchContext string `json:"watchContext"`
+	BackupContext string `json:"backupContext"`
+	Deleted bool `json:"deleted"`
+}
+
+type _jsonObject struct {
+	Id _context `json:"id"`
+}
+
+const PORT = 4000
+
+func getSlotsProcessor(w http.ResponseWriter, req *http.Request) {
+	fmt.Println("received request")
+	/* discard request body */
+	io.Copy(io.Discard, req.Body)
+	/* read and extract JSON from file into struct */
+	file, err := os.Open("slots.json")
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+	reader := bufio.NewReader(file)
+	completeBuf := make([]byte, 0)
+	buf := make([]byte, 1024)
+	for {
+		n, err := reader.Read(buf)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			fmt.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		completeBuf = append(completeBuf, buf[:n]...)
+	}
+	var jsonObject _jsonObject
+	err = json.Unmarshal(completeBuf, &jsonObject)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write(completeBuf)
+}
+
+func setSlotsProcessor(w http.ResponseWriter, req *http.Request) {
+	defer req.Body.Close()
+
+	var jsonObject _jsonObject
+	err := json.NewEncoder(req.Body).Decode(&jsonObject)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusExpectationFailed)
+		return
+	}
+	// for 
+
+}
+
+
+func main() {
+	http.HandleFunc("GET /get-slots", getSlotsProcessor)
+	// http.HandleFunc("POST /post-slots", postSlotsProcessor)
+
+	fmt.Println("Helios server listening on localhost:4000")
+	log.Fatal(http.ListenAndServe(":4000", nil))
+
+}

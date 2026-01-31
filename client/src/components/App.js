@@ -13,6 +13,7 @@ function App() {
     fetch('/get-slots').then(response => {
       if (response.ok) {
         response.json().then(slots => {
+          console.log(slots)
           set_slots(slots)
         })
       }
