@@ -11,16 +11,12 @@ import (
 )
 
 type _context struct {
-	WatchContext string `json:"watchContext"`
-	BackupContext string `json:"backupContext"`
+	WatchContext string `json:"watch_context"`
+	BackupContext string `json:"backup_context"`
 	Deleted bool `json:"deleted"`
 }
 
-type _jsonObject struct {
-	Id _context `json:"id"`
-}
-
-const PORT = 4000
+type _jsonMap map[uint64]_context
 
 func getSlotsProcessor(w http.ResponseWriter, req *http.Request) {
 	fmt.Println("received request")
@@ -49,35 +45,44 @@ func getSlotsProcessor(w http.ResponseWriter, req *http.Request) {
 		}
 		completeBuf = append(completeBuf, buf[:n]...)
 	}
-	var jsonObject _jsonObject
-	err = json.Unmarshal(completeBuf, &jsonObject)
-	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
 	w.Header().Set("content-type", "application/json")
 	w.Write(completeBuf)
 }
 
-func setSlotsProcessor(w http.ResponseWriter, req *http.Request) {
+func postSlotsProcessor(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 
-	var jsonObject _jsonObject
-	err := json.NewEncoder(req.Body).Decode(&jsonObject)
+	var jsonMap _jsonMap
+	err := json.NewDecoder(req.Body).Decode(&jsonMap)
 	if err != nil {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusExpectationFailed)
 		return
 	}
-	// for 
+	for key, v := range jsonMap {
+		if v.Deleted == true {
+			delete(jsonMap, key)
+		}
+	}
+	json, err0 := json.Marshal(jsonMap)
+	if err0 != nil {
+		fmt.Println(err0)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	err0 = os.WriteFile("slots.json", json, 0644)
+	if err0 != nil {
+		fmt.Println(err0)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	w.WriteHeader(http.StatusCreated)
 
 }
 
 
 func main() {
 	http.HandleFunc("GET /get-slots", getSlotsProcessor)
-	// http.HandleFunc("POST /post-slots", postSlotsProcessor)
+	http.HandleFunc("POST /post-slots", postSlotsProcessor)
 
 	fmt.Println("Helios server listening on localhost:4000")
 	log.Fatal(http.ListenAndServe(":4000", nil))
