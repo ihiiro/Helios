@@ -74,6 +74,7 @@ func postSlotsProcessor(w http.ResponseWriter, req *http.Request) {
 	if err0 != nil {
 		fmt.Println(err0)
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	w.WriteHeader(http.StatusCreated)
 
