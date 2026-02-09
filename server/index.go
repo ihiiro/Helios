@@ -5,7 +5,6 @@ import (
 	"log"
 	"encoding/json"
 	"io"
-	"bufio"
 	"os"
 	"net/http"
 )
@@ -19,64 +18,46 @@ type _context struct {
 type _jsonMap map[uint64]_context
 
 func getSlotsProcessor(w http.ResponseWriter, req *http.Request) {
-	fmt.Println("received request")
-	/* discard request body */
+	log.Printf("%s %s content-type:%s", req.Method, req.URL, req.Header["Content-Type"])
 	io.Copy(io.Discard, req.Body)
-	/* read and extract JSON from file into struct */
-	file, err := os.Open("slots.json")
+	bytes, err := os.ReadFile("slots.json")
 	if err != nil {
-		fmt.Println(err)
+		log.Print(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	defer file.Close()
-	reader := bufio.NewReader(file)
-	completeBuf := make([]byte, 0)
-	buf := make([]byte, 1024)
-	for {
-		n, err := reader.Read(buf)
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			fmt.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		completeBuf = append(completeBuf, buf[:n]...)
-	}
 	w.Header().Set("content-type", "application/json")
-	w.Write(completeBuf)
+	w.Write(bytes)
 }
 
 func postSlotsProcessor(w http.ResponseWriter, req *http.Request) {
+	log.Printf("%s %s content-type:%s", req.Method, req.URL, req.Header["Content-Type"])
 	defer req.Body.Close()
-
 	var jsonMap _jsonMap
 	err := json.NewDecoder(req.Body).Decode(&jsonMap)
 	if err != nil {
-		fmt.Println(err)
+		log.Print(err)
 		w.WriteHeader(http.StatusExpectationFailed)
 		return
 	}
 	for key, v := range jsonMap {
-		if v.Deleted == true {
+		if v.Deleted == true { 
 			delete(jsonMap, key)
 		}
 	}
-	json, err0 := json.Marshal(jsonMap)
-	if err0 != nil {
-		fmt.Println(err0)
+	json, err := json.Marshal(jsonMap)
+	if err != nil {
+		log.Print(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	err0 = os.WriteFile("slots.json", json, 0644)
-	if err0 != nil {
-		fmt.Println(err0)
+	err = os.WriteFile("slots.json", json, 0644)
+	if err != nil {
+		log.Print(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusCreated) 
 
 }
 

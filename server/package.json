@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon --watch index.js index.js"
+    "start": "npm exec --call \"go build index.go && index.exe\""
   },
   "keywords": [],
   "author": "",
